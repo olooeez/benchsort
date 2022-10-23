@@ -4,6 +4,6 @@
 #include "interface.h"
 
 void generate_input(const generated_shape_option_t shape, const option_size_t size);
-void generate_output(const generated_shape_option_t shape, const option_size_t size);
+void generate_output(const generated_shape_option_t shape, const option_size_t size, algorithm_option_t algorithm);
 
 #endif
