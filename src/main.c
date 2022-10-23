@@ -16,7 +16,7 @@ int main(void) {
     while (true) {
         algorithm_selected = interface_select_algorithm();
 
-        if (algorithm_selected > 1 || algorithm_selected < 0) {
+        if (algorithm_selected > 4 || algorithm_selected < 0) {
             interface_invalid_option(algorithm_selected);
         } else {
             break;
@@ -63,7 +63,7 @@ int main(void) {
         goto shape;
     }
 
-    interface_benchmark(selected_shape, selected_size);
+    interface_benchmark(selected_shape, selected_size, algorithm_selected);
 
     puts("Programa terminado com sucesso!");
 

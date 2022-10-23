@@ -47,3 +47,20 @@ int size_to_integer(const option_size_t size) {
 
     return return_size;
 }
+
+char *algorithm_to_string(const algorithm_option_t algorithm) {
+    switch (algorithm) {
+    case INSERTION_SORT:
+        return "insertion";
+    case SELECTION_SORT:
+        return "selection";
+    case BUBBLE_SORT:
+        return "bubble";
+    case SHELL_SORT:
+        return "shell";
+    default:
+        break;
+    }
+
+    return NULL;
+}

@@ -13,7 +13,10 @@ algorithm_option_t interface_select_algorithm(void) {
     puts("Olá, seja bem vindo!");
     puts("Escolha abaixo um algoritimo (ou uma opção) para fazer o teste de benchmark:");
     puts("1-Insertion Sort");
-    puts("2-Sair");
+    puts("2-Selection Sort");
+    puts("3-Bubble Sort");
+    puts("4-Shell sort");
+    puts("5-Sair");
 
     int option_selected;
     printf("> ");
@@ -67,11 +70,11 @@ void print_error_exit(char *message) {
     exit(EXIT_FAILURE);
 }
 
-void interface_benchmark(generated_shape_option_t shape, option_size_t size) {
+void interface_benchmark(generated_shape_option_t shape, option_size_t size, algorithm_option_t algorithm) {
     CLEAR_SCREEN;
     puts("Gerando a entrada.");
     generate_input(shape, size);
     puts("Gerando a saida (benchmark).");
-    generate_output(shape, size);
+    generate_output(shape, size, algorithm);
     puts("Benchmark completo.");
 }
