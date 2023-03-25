@@ -3,18 +3,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
 
 #include "sort.h"
 #include "io.h"
 #include "convert.h"
 
-#define INPUT_FOLDER_NAME "arquivoentrada"
-#define OUTPUT_FOLDER_NAME "arquivosaida"
+#define INPUT_FOLDER_NAME "arquivodeentrada"
+#define OUTPUT_FOLDER_NAME "arquivodesaida"
+#define OUTPUT_TIME_FOLDER_NAME "arquivodetempo"
 
 typedef enum {
     INPUT,
-    OUTPUT
+    OUTPUT,
+    TIME
 } io_t;
 
 static void create_directory(char *directory_name) {
@@ -37,7 +40,10 @@ static void create_directory(char *directory_name) {
 }
 
 static void write_input_file(const char *file_name, const int input_size, const generated_shape_option_t shape) {
+    if (access(file_name, F_OK) != -1) return;
+    
     FILE *file = fopen(file_name, "w");
+
     if (file == NULL) {
         print_error_exit("não foi possivel criar o arquivo de input.");
     }
@@ -91,8 +97,8 @@ static int *fill_array_entry(const char *input_file) {
 char *format_file_name(char *source_folder, const generated_shape_option_t shape, const option_size_t size, const io_t mode) {
     char shape_string[13], size_string[8], mode_string[8];
 
-    strncpy(shape_string, shape_to_string(shape), sizeof(shape_string));
-    strncpy(size_string, size_to_string(size), sizeof(size_string));
+    strcpy(shape_string, shape_to_string(shape));
+    strcpy(size_string, size_to_string(size));
 
     switch (mode) {
     case INPUT:
@@ -100,18 +106,14 @@ char *format_file_name(char *source_folder, const generated_shape_option_t shape
         break;
     case OUTPUT:
         strncpy(mode_string, "saida", 6);
+        break;
+    case TIME:
+        strncpy(mode_string, "tempo", 6);
     }
 
     char *file_path = (char *) malloc(sizeof(char) * strlen(source_folder) + strlen(shape_string) + strlen(size_string) + 13);
 
-    #ifdef linux
     sprintf(file_path, "%s/%s%s%s.txt", source_folder, mode_string, shape_string, size_string);
-    #endif
-
-    #ifdef _WIN32
-    sprintf(file_path, "%s\\%s%s%s.txt", source_folder, mode_string, shape_string, size_string);
-    #endif
-
     return file_path;
 }
 
@@ -126,25 +128,56 @@ void generate_input(const generated_shape_option_t shape, const option_size_t si
     free(file_path);
 }
 
-void generate_output(const generated_shape_option_t shape, const option_size_t size) {
-    char *output_file_path = format_file_name(OUTPUT_FOLDER_NAME, shape, size, OUTPUT);
+void generate_output(const generated_shape_option_t shape, const option_size_t size, algorithm_option_t algorithm) {
+    char sort_folder_name[strlen(OUTPUT_FOLDER_NAME) + 11 + strlen(algorithm_to_string(algorithm)) + 1];
+    char sort_time_folder_name[strlen(OUTPUT_TIME_FOLDER_NAME) + 11 + strlen(algorithm_to_string(algorithm)) + 1];
+
+    sprintf(sort_folder_name, "%sdoalgoritmo%s", OUTPUT_FOLDER_NAME, algorithm_to_string(algorithm));
+    sprintf(sort_time_folder_name, "%sdoalgoritmo%s", OUTPUT_TIME_FOLDER_NAME, algorithm_to_string(algorithm));
+
+    char *output_file_path = format_file_name(sort_folder_name, shape, size, OUTPUT);
+    char *output_time_file_path = format_file_name(sort_time_folder_name, shape, size, TIME);
     char *input_file_path = format_file_name(INPUT_FOLDER_NAME, shape, size, INPUT);
 
     int *data = fill_array_entry(input_file_path);
 
     clock_t begin = clock();
 
-    insertion_sort(data, size_to_integer(size));
+    switch (algorithm) {
+    case INSERTION_SORT:
+        insertion_sort(data, size_to_integer(size));
+        break;
+    case SELECTION_SORT:
+        selection_sort(data, size_to_integer(size));
+        break;
+    case BUBBLE_SORT:
+        bubble_sort(data, size_to_integer(size));
+        break;
+    case SHELL_SORT:
+        shell_sort(data, size_to_integer(size));
+        break;
+    default:
+        break;
+    }
 
     clock_t end = clock();
 
     double time = (double) (end - begin) / CLOCKS_PER_SEC;
 
-    create_directory(OUTPUT_FOLDER_NAME);
+    create_directory(sort_folder_name);
+    create_directory(sort_time_folder_name);
 
-    FILE *output_file = fopen(output_file_path, "w");
+    FILE *output_file = fopen(output_time_file_path, "w");
 
     fprintf(output_file, "%.5lf\n", time);
+
+    fclose(output_file);
+
+    output_file = fopen(output_file_path, "w");
+
+    for (int i = 0; i < size_to_integer(size); i++) {
+        fprintf(output_file, "%d\n", data[i]);
+    }
 
     fclose(output_file);
 
