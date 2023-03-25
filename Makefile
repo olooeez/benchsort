@@ -1,33 +1,69 @@
-CC=gcc
+CC = gcc
+CFLAGS = -Wall -Wextra -O2 -std=c99 -pedantic -fprofile-arcs -ftest-coverage
 
-CFLAGS=-Wall -Wextra -Werror -g
+HDR_DIR = include
+BIN_DIR = bin
+SRC_DIR = src
+OBJ_DIR = obj
+TEST_DIR = test
 
-SRC=src
-OBJ=obj
-BIN=bin
-HDR=include
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 
-SRCS=$(wildcard $(SRC)/*.c)
-OBJS=$(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
+TEST_SRCS := $(wildcard $(TEST_DIR)/*.c)
+TEST_BINS := $(patsubst $(TEST_DIR)/%.c, $(TEST_DIR)/bin/%, $(TEST_SRCS))
 
-NAME=$(BIN)/benchsort
+NAME = benchsort
+VERSION = 1.0.0
 
-all: $(OBJ) $(BIN) $(NAME)
+.PHONY: all clean check docker coverage
 
-$(NAME): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+all: $(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(NAME)
 
-$(OBJ)/%.o: $(SRC)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@ -I $(HDR)
+$(BIN_DIR)/$(NAME): main.c $(OBJS)
+	@echo "> Generating the executable in $@."
+	@$(CC) $(CFLAGS) -I $(HDR_DIR) $^ -o $@
 
-$(OBJ):
-	mkdir $@
+$(OBJ_DIR):
+	@echo "> Creating $@ directory."
+	@mkdir -p $@
 
-$(BIN):
-	mkdir $@
+$(BIN_DIR):
+	@echo "> Creating $@ directory."
+	@mkdir -p $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@echo "> Generating $@ from $<."
+	@$(CC) $(CFLAGS) -I $(HDR_DIR) -c $< -o $@
+
+$(TEST_DIR)/bin/%: $(TEST_DIR)/%.c $(OBJS)
+	@echo "> Generating $@ from $<."
+	@$(CC) $(CFLAGS) -I $(HDR_DIR) $< $(OBJS) -o $@ -lcriterion -lgcov
+
+$(TEST_DIR)/bin:
+	@echo "> Creating $@ directory."
+	@mkdir -p $@
+
+check: $(TEST_DIR)/bin $(TEST_BINS)
+	@for test in $(TEST_BINS); do echo "> Running test from $$test."; ./$$test; done
+
+coverage: $(TEST_DIR)/bin $(TEST_BINS)
+	@echo "> Generating code coverage report."
+	@rm -f *.gcno *.gcda *.gcov
+	@for test in $(TEST_BINS); do echo "> Running test with coverage from $$test."; ./$$test; done
+	@echo "> Running gcovr to get the coverage."
+	@gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root .
 
 clean:
-	rm -rf $(BIN) $(OBJ)
+	@echo "> Cleaning the project."
+	@$(RM) -rf $(OBJ_DIR) $(BIN_DIR) $(TEST_DIR)/bin *.gcno *.gcda *.gcov $(TEST_DIR)/*.gcov
 
 run: all
-	./$(NAME)
+	@echo "> Running the project in $(BIN)/$(NAME)."
+	@./$(BIN_DIR)/$(NAME)
+
+docker:
+	@echo "> Building a docker image from version $(VERSION)."
+	@docker build -t registry.gitlab.com/olooeez/$(NAME):$(VERSION) .
+	@echo "> Pushing new docker image verison $(VERSION) to container registry."
+	@docker push registry.gitlab.com/olooeez/$(NAME):$(VERSION)
