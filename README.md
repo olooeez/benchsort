@@ -2,7 +2,7 @@
 
 # benchsort
 
-Tic Tac Toe is a simple two-player game in which players take turns placing their symbol (X, O, ...) on a 3x3 grid. The first player to get three of their symbols in a row (horizontally, vertically, or diagonally) wins the game.
+This is a tool for benchmarking the performance of different sorting algorithms. It is written in C and provides a command-line interface for specifying the input size and the algorithms to be compared. It was made for a university project.
 
 ## Demo
 
